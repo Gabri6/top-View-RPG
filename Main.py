@@ -30,7 +30,7 @@ class Player():
         self.playerWidth = 20
         self.baseSpeed = 5/10
         self.playerSpeed = 2/10
-        self.playerMaxHealth = 100
+        self.playerMaxHealth = 10
         self.playerHealth = self.playerMaxHealth
         self.playerScore = 0
         self.playerAttack = False
