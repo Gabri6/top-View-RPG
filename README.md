@@ -6,3 +6,4 @@ controls :
     - left shift : sprint
     - "space" : attack in front of you (to where the red square is)
     - "B" : launch a powerful attack all around you
+    - "return" : restart the game once its game over
