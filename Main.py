@@ -84,7 +84,7 @@ class Player():
 
 
         if key[pygame.K_DOWN] or key[pygame.K_s]:  #if "s" or "down" keys are pressed, player goes down
-            if self.h < 10 * (screenHeight - self.playerSpeed - self.playerHeight//2) and self.canGoDown:
+            if self.h < (screenHeight - self.playerSpeed - self.playerHeight//2) and self.canGoDown:
                 self.h += self.playerSpeed
                 self.playerRedRectanglePos = [-5, 0]
                 self.directionAttack = 7 * math.pi/4
@@ -98,7 +98,7 @@ class Player():
                 self.attackSide = "left"
 
         if key[pygame.K_RIGHT] or key[pygame.K_d]:  #if "d" or "right" keys are pressed, player goes right
-            if self.s < 10 * (screenWidth - self.playerSpeed + self.playerWidth//2) and self.canGoRight:
+            if self.s < (screenWidth - self.playerSpeed - self.playerWidth//2) and self.canGoRight:
                 self.s += self.playerSpeed
                 self.playerRedRectanglePos = [0, -5]
                 self.directionAttack = math.pi/4
@@ -356,7 +356,7 @@ class Brick():
 class Wall():
     def __init__(self):
         self.listBricks = []
-        self.nbBricks = random.randint(2, 5)
+        self.nbBricks = random.randint(3, 6)
         self.startPosX = random.randint(1, 42) * 30
         self.startPosY = random.randint(1,18) * 30
         self.direction = random.randint(0, 1)
@@ -369,13 +369,82 @@ class Wall():
             incrementInY = 30
 
         for i in range(self.nbBricks):
-            self.listBricks.append(Brick((self.startPosX + (i * incrementInX)) * 10, (self.startPosY + (i * incrementInY)) * 10))
+            self.listBricks.append(Brick((self.startPosX + (i * incrementInX)) *10 , (self.startPosY + (i * incrementInY)) *10))
     
     def draw(self):
         for entity in self.listBricks:
             entity.draw()
 
+class SpawningHeart():
+    def __init__(self, walls):
+        self.heartWidth = 20
+        self.heartHeight = 20
+        self.posX, self.posY = random.randint(self.heartWidth/2 , screenWidth - self.heartWidth/2), random.randint(self.heartHeight/2 , screenHeight - self.heartHeight/2)
+        self.canGoUp = True
+        self.canGoDown = True
+        self.canGoLeft = True
+        self.canGoRight = True
+        self.spawn(walls)
+    
+    def spawn(self, walls):
+        self.s, self.h = random.randint(0 , screenWidth), random.randint(0 , screenHeight)
+        self.collidesWithAWall(walls)
+        while not (self.canGoUp and self.canGoDown and self.canGoLeft and self.canGoRight):
+            self.s, self.h = random.randint(0 , screenWidth), random.randint(0 , screenHeight)
+            self.collidesWithAWall(walls)
+    
+    def draw(self):
+        redHeart = pygame.image.load("coeurPlein.png")
+        redHeart = pygame.transform.scale(redHeart, (30, 30))
+        rect = redHeart.get_rect()
+        rect.center= (self.heartWidth/2, self.heartHeight/2)
+        rect = rect.move(self.posX- self.heartWidth/2, self.posY - self.heartHeight/2)
+        screen.blit(redHeart, rect)
+
+    def collidesWithPlayer(self, player):
+        if abs(self.posX - player.s) < abs(self.heartWidth/2 + player.playerWidth/2) and abs(self.posY - player.h) < abs(self.heartHeight/2 + player.playerHeight/2):
+            player.playerHealth += 1
+            return True
+        else:
+            return False
+    
+    def collidesWithAWall(self, walls):
+        underWall = False
+        overWall = False
+        wallToLeft = False
+        wallToRight = False
+        for group in walls: #run for every group of walls
+            for brick in group.listBricks: #run for every brick in the wall
+                if ((brick.s) - (self.heartWidth) +1 < self.s < (brick.s + brick.size + self.heartWidth) -1): #if between left and right sides of the wall
+                    if ((brick.h + brick.size/2 - (self.heartHeight) )< self.h < (brick.h + brick.size/2 + self.heartHeight)) :
+                        underWall = True
+                    if ((brick.h + brick.size/2 + (self.heartHeight)) > self.h > (brick.h + brick.size/2 - (self.heartHeight))) :
+                        overWall = True
+                if ((brick.h + brick.size/2 - (self.heartHeight)) +1 < self.h < (brick.h + brick.size/2 + (self.heartHeight)) -1): #if between top and bottom of the wall
+                    if ((brick.s) - (self.heartWidth) + brick.size/2 < self.s < (brick.s + brick.size + self.heartWidth)):
+                        wallToLeft = True
+                    if ((brick.s) - (self.heartWidth) < self.s < (brick.s + brick.size/2 + self.heartWidth)):
+                        wallToRight = True
+
+        if underWall:
+            self.canGoUp = False
+        else:
+            self.canGoUp = True
+
+        if overWall:
+            self.canGoDown = False
+        else:
+            self.canGoDown = True
         
+        if wallToLeft:
+            self.canGoLeft = False
+        else:
+            self.canGoLeft = True
+        
+        if wallToRight:
+            self.canGoRight = False
+        else:
+            self.canGoRight = True  
         
 
 class Game():
@@ -392,6 +461,9 @@ class Game():
         monster.append(Monster(walls))
         monster.append(Monster(walls))
         monsterTimeToRespawn = 1
+
+        toPickHeart = []
+        toPickHeart.append(SpawningHeart(walls))
 
         pause = False
         pauseWaitTime = 0.5
@@ -421,6 +493,8 @@ class Game():
                     player.move(walls)
                     player.playerPos = player.pos()
                     player.draw()
+                
+
                 else:
                     time.sleep(0.2)
                     monster, walls = Game.gameOver(player)   #game over returns an empty list
@@ -429,9 +503,19 @@ class Game():
                         player.playerScore = 0
                         monster.append(Monster(walls))
                         monster.append(Monster(walls))
-                        nbWalls = random.randint(6, 10)
+                        nbWalls = random.randint(8, 12)
                         for i in range(nbWalls):
                             walls.append(Wall())
+
+                
+                if len(toPickHeart) != 0:
+                    if toPickHeart[0].collidesWithPlayer(player):
+                        toPickHeart=[]
+                else:
+                    if random.randint(0,10000) < 2:  #when there is no heart on the map, wait a random time to spawn another one
+                        toPickHeart.append(SpawningHeart(walls))
+                for newHeart in toPickHeart:
+                    newHeart.draw()
 
                 for entity in monster:
                     entity.isHitByPlayer(player)
