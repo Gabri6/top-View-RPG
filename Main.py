@@ -29,6 +29,7 @@ class Player():
         self.playerHeight = 20
         self.playerWidth = 20
         self.baseSpeed = 5/10
+        self.timeSinceMove = time.time()
         self.playerSpeed = 2/10
         self.playerMaxHealth = 10
         self.playerHealth = self.playerMaxHealth
@@ -75,9 +76,12 @@ class Player():
 
         self.collidesWithAWall(walls)
 
+        deltaTime = (time.time() - self.timeSinceMove) *200
+        self.timeSinceMove = time.time()
+
         if key[pygame.K_UP] or key[pygame.K_z]:  #if "z" or "up" keys are pressed, player goes up 
             if self.h > 0 + self.playerSpeed + self.playerHeight//2 and self.canGoUp:
-                self.h -= self.playerSpeed
+                self.h -= self.playerSpeed * deltaTime
                 self.playerRedRectanglePos = [-5, -10]
                 self.directionAttack = 3 * math.pi/4
                 self.attackSide = "up"
@@ -85,21 +89,21 @@ class Player():
 
         if key[pygame.K_DOWN] or key[pygame.K_s]:  #if "s" or "down" keys are pressed, player goes down
             if self.h < (screenHeight - self.playerSpeed - self.playerHeight//2) and self.canGoDown:
-                self.h += self.playerSpeed
+                self.h += self.playerSpeed * deltaTime
                 self.playerRedRectanglePos = [-5, 0]
                 self.directionAttack = 7 * math.pi/4
                 self.attackSide = "down"
 
         if key[pygame.K_LEFT] or key[pygame.K_q]:  #if "q" or "left" keys are pressed, player goes left
             if self.s > 0 + self.playerSpeed + self.playerWidth//2 and self.canGoLeft:
-                self.s -= self.playerSpeed
+                self.s -= self.playerSpeed * deltaTime
                 self.playerRedRectanglePos = [-10, -5]
                 self.directionAttack = 5 * math.pi/4
                 self.attackSide = "left"
 
         if key[pygame.K_RIGHT] or key[pygame.K_d]:  #if "d" or "right" keys are pressed, player goes right
             if self.s < (screenWidth - self.playerSpeed - self.playerWidth//2) and self.canGoRight:
-                self.s += self.playerSpeed
+                self.s += self.playerSpeed * deltaTime
                 self.playerRedRectanglePos = [0, -5]
                 self.directionAttack = math.pi/4
                 self.attackSide = "right"
@@ -207,6 +211,7 @@ class Monster():
         self.monsterHeight = 20
         self.monsterWidth = 20
         self.monsterSpeed = 0.6/10
+        self.timeSinceMove = time.time()
         self.canGoUp = True
         self.canGoDown = True
         self.canGoLeft = True
@@ -250,10 +255,12 @@ class Monster():
             if (self.vector[1]>0 and not self.canGoUp) or (self.vector[1]<0 and not self.canGoDown) :
                 self.vector[1] = 0
         
+        deltaTime = (time.time() - self.timeSinceMove) *200
+        self.timeSinceMove = time.time()
 
 
-        self.s -= self.monsterSpeed * self.vector[0]
-        self.h -= self.monsterSpeed * self.vector[1]
+        self.s -= self.monsterSpeed * self.vector[0] * deltaTime
+        self.h -= self.monsterSpeed * self.vector[1] * deltaTime
 
     def pos(self):
         return self.s, self.h
@@ -403,6 +410,8 @@ class SpawningHeart():
 
     def collidesWithPlayer(self, player):
         if abs(self.posX - player.s) < abs(self.heartWidth/2 + player.playerWidth/2) and abs(self.posY - player.h) < abs(self.heartHeight/2 + player.playerHeight/2):
+            if player.playerHealth == player.playerMaxHealth:
+                player.playerMaxHealth += 1
             player.playerHealth += 1
             return True
         else:
@@ -553,7 +562,7 @@ class Game():
         blackHeart = pygame.image.load("coeurVide.png")
         blackHeart = pygame.transform.scale(blackHeart, (30, 30))
 
-        for i in range(player.playerMaxHealth//10):
+        for i in range(player.playerMaxHealth//10 +1):
             for j in range((player.playerHealth - 10 *i) if (player.playerHealth - 10 *i)<10 else 10):
                 rect = redHeart.get_rect()
                 rect = rect.move(1050 + j * 31, 50 + 15*i)
