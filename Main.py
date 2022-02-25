@@ -478,6 +478,12 @@ class Game():
         pauseWaitTime = 0.5
         timePause = 0
 
+        mousePressedX=0
+        mousePressedY=0
+        self.posX1RestartButton = screenWidth/2 - 100
+        self.posX2RestartButton = screenWidth/2 + 100
+        self.posY1RestartButton = screenHeight/2 + 100
+        self.posY2RestartButton = screenHeight/2 + 140
 
         while True:
             key = pygame.key.get_pressed() #look at which key is pressed
@@ -489,8 +495,8 @@ class Game():
                     pause = not pause
                     timePause = time.time()
 
-            if pause:
-                pygame.draw.rect(screen,(0,0,0),[screenWidth - 120,100,15,40])
+            if pause: #draw the two bars representatives of the pause
+                pygame.draw.rect(screen,(0,0,0),[screenWidth - 120,100,15,40]) 
                 pygame.draw.rect(screen,(0,0,0),[screenWidth - 100,100,15,40])
                 pygame.display.flip()
             
@@ -498,30 +504,40 @@ class Game():
                 screen.fill([255,255,255])
                 for entity in monster:
                     player.isBittenByMonster(entity)
-                if player.playerHealth > 0:
-                    player.move(walls)
-                    player.playerPos = player.pos()
-                    player.draw()
                 
-
-                else:
+                print(player.playerHealth)
+                if player.playerHealth == 0:
                     time.sleep(0.2)
-                    monster, walls = Game.gameOver(player)   #game over returns an empty list
-                    if key[pygame.K_RETURN]:                    #restarts the game with "enter" key
-                        player.playerHealth = player.playerMaxHealth
-                        player.playerScore = 0
-                        monster.append(Monster(walls))
-                        monster.append(Monster(walls))
+                    monster, walls, toPickHeart = Game.gameOver(self, player)   #game over returns two empty lists, so remove alls the walls and monsters
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT  or key[pygame.K_ESCAPE]: #used to stop the program when the cross to close the window or escape is pressed
+                            sys.exit()
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_presses = pygame.mouse.get_pressed()  #get the position of the mouse if pressed
+                            if mouse_presses[0]:
+                                mousePressedX, mousePressedY = pygame.mouse.get_pos()
+                    if key[pygame.K_RETURN] or (self.posX1RestartButton< mousePressedX < self.posX2RestartButton and self.posY1RestartButton < mousePressedY < self.posY2RestartButton):                    #restarts the game when "enter" key is pressed
+
                         nbWalls = random.randint(8, 12)
                         for i in range(nbWalls):
                             walls.append(Wall())
+                        player = Player(walls)
+                        player.playerScore = 0
+                        monster.append(Monster(walls))
+                        monster.append(Monster(walls))
+                        toPickHeart.append(SpawningHeart(walls))
+                        mousePressedX, mousePressedY = 0, 0
 
+                else :
+                    player.move(walls)
+                    player.playerPos = player.pos()
+                    player.draw()
                 
                 if len(toPickHeart) != 0:
                     if toPickHeart[0].collidesWithPlayer(player):
                         toPickHeart=[]
                 else:
-                    if random.randint(0,10000) < 2:  #when there is no heart on the map, wait a random time to spawn another one
+                    if random.randint(0,10000) < 2:  #if there is no heart on the map, there is a little percentage of chance of another one spawning at each iteration
                         toPickHeart.append(SpawningHeart(walls))
                 for newHeart in toPickHeart:
                     newHeart.draw()
@@ -529,11 +545,11 @@ class Game():
                 for entity in monster:
                     entity.isHitByPlayer(player)
 
-                    if entity.monsterHealth > 0:
+                    if entity.monsterHealth > 0: #the actions the monster has to execute if he is alive
                         entity.move(player, walls)
                         entity.monsterPos = entity.pos()
                         entity.draw()
-                    else:
+                    else:                   #when the monster is dead, remove him and put the time in the monsterDeathTime list so that it will respawn after a certain time
                         monster.remove(entity)
                         monsterDeathTime.append(time.time())
                         player.playerScore += 1
@@ -541,7 +557,7 @@ class Game():
                 for entity in walls:
                     entity.draw()
                 
-                for timeSinceDeath in monsterDeathTime:
+                for timeSinceDeath in monsterDeathTime: #check the time since each monster's death and make some respawn if the monster is dead for long enough
                     if time.time() - timeSinceDeath > monsterTimeToRespawn:
                         monster.append(Monster(walls))
                         monster.append(Monster(walls))
@@ -551,10 +567,10 @@ class Game():
                 pygame.display.flip()
 
     def draw(player, nbmonster):
-        font = pygame.font.SysFont("calibri",30)
-        text = pygame.font.Font.render(font, f"Score = " + str(player.playerScore), True, (0, 0, 0))
+        font = pygame.font.SysFont("calibri",30)    #define the police used
+        text = pygame.font.Font.render(font, f"Score = " + str(player.playerScore), True, (0, 0, 0))    #writes the score in the top left corner
         screen.blit(text, (50, 50))
-        text = pygame.font.Font.render(font, f"number entities = " + str(nbmonster), True, (0, 0, 0))
+        text = pygame.font.Font.render(font, f"number entities = " + str(nbmonster), True, (0, 0, 0))   #writes the number of entities at the middle top of the screen
         screen.blit(text, (550, 50))
 
         redHeart = pygame.image.load("coeurPlein.png")
@@ -562,7 +578,7 @@ class Game():
         blackHeart = pygame.image.load("coeurVide.png")
         blackHeart = pygame.transform.scale(blackHeart, (30, 30))
 
-        for i in range(player.playerMaxHealth//10 +1):
+        for i in range(player.playerMaxHealth//10 +1):      #divide the number of hearts of the player by 10 to display them as lines of ten hearts
             for j in range((player.playerHealth - 10 *i) if (player.playerHealth - 10 *i)<10 else 10):
                 rect = redHeart.get_rect()
                 rect = rect.move(1050 + j * 31, 50 + 15*i)
@@ -572,14 +588,25 @@ class Game():
                 rect = rect.move(1050 + player.playerHealth * 31 + k * 31, 50 + 15 * i)
                 screen.blit(blackHeart, rect)
     
-    def gameOver(player):
+    def gameOver(self, player):
         font = pygame.font.SysFont("calibri",70)
         text = pygame.font.Font.render(font, f"Game Over", True, (0, 0, 0))
-        screen.blit(text, (540, 315))
+        textRect = text.get_rect()
+        textRect.center = (screenWidth/2, screenHeight/2) #used to put the center of the text at the center of the screen
+        screen.blit(text, textRect)
         font2 = pygame.font.SysFont("calibri",40)
-        text = pygame.font.Font.render(font2, f"Score = " + str(player.playerScore), True, (0, 0, 0))
-        screen.blit(text, (615, 395))
-        return [], []
+        score = pygame.font.Font.render(font2, f"Score = " + str(player.playerScore), True, (0, 0, 0))
+        scoreRect = score.get_rect()
+        scoreRect.center = (screenWidth/2, screenHeight/2 + 65)
+        screen.blit(score, scoreRect)
+        pygame.draw.rect(screen,(0,0,0),[self.posX1RestartButton,self.posY1RestartButton,self.posX2RestartButton - self.posX1RestartButton, self.posY2RestartButton - self.posY1RestartButton])
+        pygame.draw.rect(screen,(255, 255, 255),[self.posX1RestartButton + 3,self.posY1RestartButton + 3,self.posX2RestartButton - self.posX1RestartButton - 6, self.posY2RestartButton - self.posY1RestartButton - 6])
+        font3 = pygame.font.SysFont("calibri",40)
+        textRestart = pygame.font.Font.render(font3, f"Restart", True, (0, 0, 0))
+        restartRect = textRestart.get_rect()
+        restartRect.center = (screenWidth/2, self.posY1RestartButton + (self.posY2RestartButton - self.posY1RestartButton)/2 +2)
+        screen.blit(textRestart, restartRect)
+        return [], [], []
 
 
 class myApp():
