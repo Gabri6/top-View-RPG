@@ -458,21 +458,24 @@ class SpawningHeart():
 
 class Game():
     def __init__(self):
-        walls = []
+        self.difficulty = "hard" #"easy", "medium" or "hard", for now it only changes the way of spawning of monsters
+
+        self.walls = []
         nbWalls = random.randint(6, 10)
         for i in range(nbWalls):
-            walls.append(Wall())
+            self.walls.append(Wall())
 
-        player = Player(walls)
+        player = Player(self.walls)
 
-        monster=[]
-        monsterDeathTime=[]
-        monster.append(Monster(walls))
-        monster.append(Monster(walls))
-        monsterTimeToRespawn = 1
+        self.monster=[]
+        self.monsterDeathTime=[]
+        self.monster.append(Monster(self.walls))
+        self.monster.append(Monster(self.walls))
+        self.nbMonster = len(self.monster)
+        self.monsterTimeToRespawn = 1
 
         toPickHeart = []
-        toPickHeart.append(SpawningHeart(walls))
+        toPickHeart.append(SpawningHeart(self.walls))
 
         pause = False
         pauseWaitTime = 0.5
@@ -492,23 +495,35 @@ class Game():
                     sys.exit()
             if key[pygame.K_p]:
                 if time.time() - timePause > pauseWaitTime:
-                    pause = not pause
+                    pause = True
                     timePause = time.time()
 
-            if pause: #draw the two bars representatives of the pause
+
+            while pause:
+                key = pygame.key.get_pressed()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT  or key[pygame.K_ESCAPE]: #used to stop the program when the cross to close the window or escape is pressed
+                        sys.exit()
+                if time.time() - timePause > pauseWaitTime:
+                    print(key[pygame.K_p])
+                    if key[pygame.K_p]:
+                        pause = False
+                        timePause = time.time()
+                        for entity in self.monster:
+                            entity.timeSinceMove = time.time()
+                        player.timeSinceMove = time.time()
                 pygame.draw.rect(screen,(0,0,0),[screenWidth - 120,100,15,40]) 
                 pygame.draw.rect(screen,(0,0,0),[screenWidth - 100,100,15,40])
                 pygame.display.flip()
             
             else:
                 screen.fill([255,255,255])
-                for entity in monster:
+                for entity in self.monster:
                     player.isBittenByMonster(entity)
                 
-                print(player.playerHealth)
                 if player.playerHealth == 0:
                     time.sleep(0.2)
-                    monster, walls, toPickHeart = Game.gameOver(self, player)   #game over returns two empty lists, so remove alls the walls and monsters
+                    self.monster, self.walls, toPickHeart = Game.gameOver(self, player)   #game over returns two empty lists, so remove alls the walls and monsters
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT  or key[pygame.K_ESCAPE]: #used to stop the program when the cross to close the window or escape is pressed
                             sys.exit()
@@ -520,16 +535,16 @@ class Game():
 
                         nbWalls = random.randint(8, 12)
                         for i in range(nbWalls):
-                            walls.append(Wall())
-                        player = Player(walls)
+                            self.walls.append(Wall())
+                        player = Player(self.walls)
                         player.playerScore = 0
-                        monster.append(Monster(walls))
-                        monster.append(Monster(walls))
-                        toPickHeart.append(SpawningHeart(walls))
+                        self.monster.append(Monster(self.walls))
+                        self.monster.append(Monster(self.walls))
+                        toPickHeart.append(SpawningHeart(self.walls))
                         mousePressedX, mousePressedY = 0, 0
 
                 else :
-                    player.move(walls)
+                    player.move(self.walls)
                     player.playerPos = player.pos()
                     player.draw()
                 
@@ -538,33 +553,55 @@ class Game():
                         toPickHeart=[]
                 else:
                     if random.randint(0,10000) < 2:  #if there is no heart on the map, there is a little percentage of chance of another one spawning at each iteration
-                        toPickHeart.append(SpawningHeart(walls))
+                        toPickHeart.append(SpawningHeart(self.walls))
                 for newHeart in toPickHeart:
                     newHeart.draw()
 
-                for entity in monster:
+                for entity in self.monster:
                     entity.isHitByPlayer(player)
 
                     if entity.monsterHealth > 0: #the actions the monster has to execute if he is alive
-                        entity.move(player, walls)
+                        entity.move(player, self.walls)
                         entity.monsterPos = entity.pos()
                         entity.draw()
                     else:                   #when the monster is dead, remove him and put the time in the monsterDeathTime list so that it will respawn after a certain time
-                        monster.remove(entity)
-                        monsterDeathTime.append(time.time())
+                        self.monster.remove(entity)
+                        self.monsterDeathTime.append(time.time())
                         player.playerScore += 1
                 
-                for entity in walls:
+                for entity in self.walls:
                     entity.draw()
                 
-                for timeSinceDeath in monsterDeathTime: #check the time since each monster's death and make some respawn if the monster is dead for long enough
-                    if time.time() - timeSinceDeath > monsterTimeToRespawn:
-                        monster.append(Monster(walls))
-                        monster.append(Monster(walls))
-                        monsterDeathTime.remove(timeSinceDeath)
-                Game.draw(player, len(monster))
+                self.monsterRespawn()
+                
+                Game.draw(player, len(self.monster))
 
                 pygame.display.flip()
+    
+
+    def monsterRespawn(self):  #changes the way the monster spawns depending on the difficulty
+        if self.difficulty == "easy":
+            if len(self.monster) == 0:
+                self.nbMonster += random.randint(1,4)
+                for i in range(self.nbMonster):
+                    self.monster.append(Monster(self.walls))
+
+
+        if self.difficulty == "medium":
+            for timeSinceDeath in self.monsterDeathTime: #check the time since each monster's death and make two respawn if the monster is dead for long enough
+                if time.time() - timeSinceDeath > self.monsterTimeToRespawn:
+                    self.monster.append(Monster(self.walls))
+                    self.monster.append(Monster(self.walls))
+                    self.monsterDeathTime.remove(timeSinceDeath)
+            
+        if self.difficulty == "hard":
+            nbMonster = len(self.monster)
+            for timeSinceDeath in self.monsterDeathTime: #check the time since each monster's death and make respawn as much as there are on the map if the monster is dead for long enough
+                if time.time() - timeSinceDeath > self.monsterTimeToRespawn:
+                    self.monster.append(Monster(self.walls))
+                    for i in range (nbMonster):
+                        self.monster.append(Monster(self.walls))
+                    self.monsterDeathTime.remove(timeSinceDeath)
 
     def draw(player, nbmonster):
         font = pygame.font.SysFont("calibri",30)    #define the police used
