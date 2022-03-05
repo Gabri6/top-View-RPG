@@ -13,3 +13,9 @@ controls :
     - 'B' : launch a powerful attack all around you
 
     -"return" : restart the game once its game over
+
+
+
+
+Music by:
+    - Speedenza (license: https://creativecommons.org/licenses/by-nc/3.0/)
