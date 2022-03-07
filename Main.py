@@ -227,7 +227,12 @@ class Monster():
         self.damageTaken = 0
         self.timeToRespawn = 1
 
-        self.soundWhenHit = pygame.mixer.Sound("sound/swordHit1.wav")
+        self.soundStab = pygame.mixer.Sound("sound/swordStab.wav")
+        self.soundSlice = pygame.mixer.Sound("sound/swordSlice.wav")
+        self.soundStab2 = pygame.mixer.Sound("sound/swordStab2.wav")
+        self.soundRareSlice = pygame.mixer.Sound("sound/rareSwordSlice.mp3")
+
+        self.soundSwordUlti = pygame.mixer.Sound("sound/swordUlti.ogg")
 
         self.rangeAttack = 10
 
@@ -293,14 +298,24 @@ class Monster():
                 self.damageTaken = "-"+str(player.attackDamage)
                 self.timeSinceHit = time.time()
                 self.isHit = False
-                pygame.mixer.Sound.play(self.soundWhenHit)
+
+                soundChoice = random.randint(0,200)
+                if soundChoice <= 75:
+                    pygame.mixer.Sound.play(self.soundStab)
+                elif 75 < soundChoice <= 150:
+                    pygame.mixer.Sound.play(self.soundSlice)
+                elif 150 < soundChoice <= 175:
+                    pygame.mixer.Sound.play(self.soundStab2)
+                else:
+                    pygame.mixer.Sound.play(self.soundRareSlice)
+
 
 
         if player.playerUlti == True and math.sqrt((self.s - player.playerPos[0])**2 + (self.h - player.playerPos[1])**2) < player.rangeUlti and time.time() - self.timeSinceHit > self.timeInvicible:
             self.monsterHealth -= player.ultiDamage
             self.damageTaken = "-"+str(player.ultiDamage)
             self.timeSinceHit = time.time()
-            pygame.mixer.Sound.play(self.soundWhenHit)
+            pygame.mixer.Sound.play(self.soundSwordUlti)
     
     def spawn(self, walls):
         if time.time() - self.timeSinceHit > self.timeToRespawn:
@@ -392,25 +407,27 @@ class Wall():
 
 class SpawningHeart():
     def __init__(self, walls):
-        self.heartWidth = 20
-        self.heartHeight = 20
+        self.heartWidth = 30
+        self.heartHeight = 30
         self.posX, self.posY = random.randint(self.heartWidth/2 , screenWidth - self.heartWidth/2), random.randint(self.heartHeight/2 , screenHeight - self.heartHeight/2)
-        self.canGoUp = True
-        self.canGoDown = True
-        self.canGoLeft = True
-        self.canGoRight = True
+        self.canGoUp = False
+        self.canGoDown = False
+        self.canGoLeft = False
+        self.canGoRight = False
         self.spawn(walls)
+        self.soundPicked = pygame.mixer.Sound("sound/heartPickUp.ogg")
+
     
     def spawn(self, walls):
-        self.s, self.h = random.randint(0 , screenWidth), random.randint(0 , screenHeight)
+        self.s, self.h = random.randint(self.heartWidth/2 , screenWidth - self.heartWidth/2), random.randint(self.heartHeight/2 , screenHeight - self.heartHeight/2)
         self.collidesWithAWall(walls)
         while not (self.canGoUp and self.canGoDown and self.canGoLeft and self.canGoRight):
-            self.s, self.h = random.randint(0 , screenWidth), random.randint(0 , screenHeight)
+            self.s, self.h = random.randint(self.heartWidth/2 , screenWidth - self.heartWidth/2), random.randint(self.heartHeight/2 , screenHeight - self.heartHeight/2)
             self.collidesWithAWall(walls)
     
     def draw(self):
         redHeart = pygame.image.load("coeurPlein.png")
-        redHeart = pygame.transform.scale(redHeart, (30, 30))
+        redHeart = pygame.transform.scale(redHeart, (self.heartWidth, self.heartHeight))
         rect = redHeart.get_rect()
         rect.center= (self.heartWidth/2, self.heartHeight/2)
         rect = rect.move(self.posX- self.heartWidth/2, self.posY - self.heartHeight/2)
@@ -421,6 +438,7 @@ class SpawningHeart():
             if player.playerHealth == player.playerMaxHealth:
                 player.playerMaxHealth += 1
             player.playerHealth += 1
+            pygame.mixer.Sound.play(self.soundPicked)
             return True
         else:
             return False
@@ -432,15 +450,15 @@ class SpawningHeart():
         wallToRight = False
         for group in walls: #run for every group of walls
             for brick in group.listBricks: #run for every brick in the wall
-                if ((brick.s) - (self.heartWidth) +1 < self.s < (brick.s + brick.size + self.heartWidth) -1): #if between left and right sides of the wall
-                    if ((brick.h + brick.size/2 - (self.heartHeight) )< self.h < (brick.h + brick.size/2 + self.heartHeight)) :
+                if ((brick.s) - (self.heartWidth)/2 - 1 < self.s < (brick.s + (brick.size) + (self.heartWidth)/2) +1): #if between left and right sides of the wall
+                    if ((brick.h + brick.size/2 - (self.heartHeight) -1 )< self.h < (brick.h + brick.size/2 + self.heartHeight/2) +1) :
                         underWall = True
                     if ((brick.h + brick.size/2 + (self.heartHeight)) > self.h > (brick.h + brick.size/2 - (self.heartHeight))) :
                         overWall = True
-                if ((brick.h + brick.size/2 - (self.heartHeight)) +1 < self.h < (brick.h + brick.size/2 + (self.heartHeight)) -1): #if between top and bottom of the wall
-                    if ((brick.s) - (self.heartWidth) + brick.size/2 < self.s < (brick.s + brick.size + self.heartWidth)):
+                if ((brick.h + brick.size/2 - (self.heartHeight) - 1) < self.h < (brick.h + brick.size/2 + (self.heartHeight)) + 1): #if between top and bottom of the wall
+                    if ((brick.s) - (self.heartWidth)/2 + brick.size/2 -1 < self.s < (brick.s + brick.size + self.heartWidth/2) +1):
                         wallToLeft = True
-                    if ((brick.s) - (self.heartWidth) < self.s < (brick.s + brick.size/2 + self.heartWidth)):
+                    if ((brick.s) - (self.heartWidth/2) -1 < self.s < (brick.s + brick.size/2 + self.heartWidth/2) +1):
                         wallToRight = True
 
         if underWall:
@@ -467,7 +485,12 @@ class SpawningHeart():
 class Game():
     def __init__(self):
         self.difficulty = "medium" #"easy", "medium" or "hard", for now it only changes the way of spawning of monsters
+        #music
+        music = pygame.mixer.music.load("sound/backgroundMusic.oggvorbis.ogg")
+        pygame.mixer.music.play(-1)
 
+
+        #entities
         self.walls = []
         nbWalls = random.randint(6, 10)
         for i in range(nbWalls):
@@ -484,6 +507,7 @@ class Game():
 
         self.toPickHeart = []
         self.toPickHeart.append(SpawningHeart(self.walls))
+        self.heartSpawnProbability = 1/5000
 
         self.commandWaitTime = 0.5
         self.timePause = 0
@@ -544,7 +568,7 @@ class Game():
                     if self.toPickHeart[0].collidesWithPlayer(self.player):
                         self.toPickHeart=[]
                 else:
-                    if random.randint(0,10000) < 2:  #if there is no heart on the map, there is a little percentage of chance of another one spawning at each iteration
+                    if random.randint(0,1/self.heartSpawnProbability) < 1:  #if there is no heart on the map, there is a little percentage of chance of another one spawning at each iteration
                         self.toPickHeart.append(SpawningHeart(self.walls))
                 for newHeart in self.toPickHeart:
                     newHeart.draw()
@@ -629,7 +653,7 @@ class Game():
                 rect = rect.move(1050 + self.player.playerHealth * 31 + k * 31, 50 + 15 * i)
                 screen.blit(blackHeart, rect)
     
-    def pause(self, player):
+    def pause(self, player): #design how the pause screen is when you press "p" in-game
         Done = True
         screen.fill([255,255,255])
         font = pygame.font.SysFont("calibri",70)
@@ -681,7 +705,7 @@ class Game():
                     player.timeSinceMove = time.time()
             
 
-    def gameOver(self, player):
+    def gameOver(self, player): #define the game-over page when the player doesn't have any health left
         font = pygame.font.SysFont("calibri",70)
         text = pygame.font.Font.render(font, f"Game Over", True, (0, 0, 0))
         textRect = text.get_rect()
