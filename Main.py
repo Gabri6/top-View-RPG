@@ -210,11 +210,16 @@ class Player():
 class Monster():
     def __init__(self, walls, speed, health):
         self.monsterPos = ((screenWidth//4),(screenHeight//4))  #monster's parameters
-        self.monsterHeight = 20
-        self.monsterWidth = 20
+        self.monsterHeight = 30
+        self.monsterWidth = 30
 
         self.monsterSpeed = speed
         self.timeSinceMove = time.time()
+        self.monsterSide = "right"
+        self.whichImage = 1
+        self.legsClosing = True
+        self.timeLastImageChange=time.time()
+        self.timeBetweenImageChange=0.02/(self.monsterSpeed)
         self.canGoUp = True
         self.canGoDown = True
         self.canGoLeft = True
@@ -242,7 +247,30 @@ class Monster():
         self.spawn(walls)
 
     def draw(self):  #design of the monster
-        pygame.draw.rect(screen,(79,105,54),[(self.s)-10,(self.h)-10,self.monsterWidth, self.monsterHeight])
+        legsClosing = True
+        if time.time()-self.timeLastImageChange > self.timeBetweenImageChange:
+            self.timeLastImageChange = time.time()
+            if self.whichImage == 1 or self.whichImage == 3:
+                self.whichImage = 2
+            elif not self.legsClosing:
+                self.whichImage = 1
+                self.legsClosing = not self.legsClosing
+            else:
+                self.whichImage = 3
+                self.legsClosing = not self.legsClosing
+        if self.vector[0] < 0:  #checks to wich side the zombie is going and uses the right image, so that he faces the player
+            zombie = pygame.image.load("images/zombie_right_"+str(self.whichImage)+".png")
+            self.monsterSide = "right"
+        elif self.vector[0] > 0:    
+            zombie = pygame.image.load("images/zombie_left_"+str(self.whichImage)+".png")
+            self.monsterSide = "left"
+        else:   #if the zombie hits a wall, uses the last side where the zombie was going, so that he faces the player
+            zombie = pygame.image.load("images/zombie_"+self.monsterSide+"_"+str(self.whichImage)+".png")
+        zombie = pygame.transform.scale(zombie, (self.monsterWidth, self.monsterHeight))
+        rect = zombie.get_rect()
+        rect.center= (self.monsterWidth/2, self.monsterHeight/2)
+        rect = rect.move(self.s- self.monsterWidth/2, self.h - self.monsterHeight/2)
+        screen.blit(zombie, rect)
         pygame.draw.rect(screen,(255,0,0),[(self.s)-10,(self.h)-20,self.monsterHealth/self.monsterFullHealth * 20, 2])       
         if time.time() - self.timeSinceHit < self.timeInvicible:
             font = pygame.font.SysFont("calibri",15)
