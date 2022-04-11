@@ -247,7 +247,6 @@ class Monster():
         self.spawn(walls)
 
     def draw(self):  #design of the monster
-        legsClosing = True
         if time.time()-self.timeLastImageChange > self.timeBetweenImageChange:
             self.timeLastImageChange = time.time()
             if self.whichImage == 1 or self.whichImage == 3:
@@ -259,13 +258,13 @@ class Monster():
                 self.whichImage = 3
                 self.legsClosing = not self.legsClosing
         if self.vector[0] < 0:  #checks to wich side the zombie is going and uses the right image, so that he faces the player
-            zombie = pygame.image.load("images/zombie_right_"+str(self.whichImage)+".png")
+            zombie = pygame.image.load("images/monster/zombie_right_"+str(self.whichImage)+".png")
             self.monsterSide = "right"
         elif self.vector[0] > 0:    
-            zombie = pygame.image.load("images/zombie_left_"+str(self.whichImage)+".png")
+            zombie = pygame.image.load("images/monster/zombie_left_"+str(self.whichImage)+".png")
             self.monsterSide = "left"
         else:   #if the zombie hits a wall, uses the last side where the zombie was going, so that he faces the player
-            zombie = pygame.image.load("images/zombie_"+self.monsterSide+"_"+str(self.whichImage)+".png")
+            zombie = pygame.image.load("images/monster/zombie_"+self.monsterSide+"_"+str(self.whichImage)+".png")
         zombie = pygame.transform.scale(zombie, (self.monsterWidth, self.monsterHeight))
         rect = zombie.get_rect()
         rect.center= (self.monsterWidth/2, self.monsterHeight/2)
