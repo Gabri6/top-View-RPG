@@ -539,6 +539,8 @@ class Button():
 
 class Game():
     def __init__(self):
+        self.title = f"Zomb's"
+        
         self.difficulty = "easy" #"easy", "medium" or "hard", for now it only changes the way of spawning of monsters
         #music
         music = pygame.mixer.music.load("sound/backgroundMusic.oggvorbis.ogg")
@@ -739,7 +741,7 @@ class Game():
                         self.mousePressedX, self.mousePressedY = pygame.mouse.get_pos()
             screen.fill([255,255,255])
             font = pygame.font.SysFont("calibri",70)
-            text = pygame.font.Font.render(font, f"Game's Title", True, (0, 0, 0)) #maybe "Perseus' Death Battle"
+            text = pygame.font.Font.render(font, str(self.title), True, (0, 0, 0)) #maybe "Perseus' Death Battle"
             textRect = text.get_rect()
             textRect.center = (screenWidth/2, screenHeight/2) #used to put the center of the text at the center of the screen
             screen.blit(text, textRect)
