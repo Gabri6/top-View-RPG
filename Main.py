@@ -404,7 +404,7 @@ class Brick():
         self.h = posY /10
     
     def draw(self):
-        Brick = pygame.image.load("Brick.png")
+        Brick = pygame.image.load("images/brick.png")
         Brick = pygame.transform.scale(Brick, (self.size, self.size))
         rect = Brick.get_rect()
         rect = rect.move(self.s, self.h)
@@ -455,7 +455,7 @@ class SpawningHeart():
             self.collidesWithAWall(walls)
     
     def draw(self):
-        redHeart = pygame.image.load("coeurPlein.png")
+        redHeart = pygame.image.load("images/coeurPlein.png")
         redHeart = pygame.transform.scale(redHeart, (self.heartWidth, self.heartHeight))
         rect = redHeart.get_rect()
         rect.center= (self.heartWidth/2, self.heartHeight/2)
@@ -694,12 +694,12 @@ class Game():
         font = pygame.font.SysFont("calibri",30)    #define the police used
         text = pygame.font.Font.render(font, f"Score = " + str(self.player.playerScore), True, (0, 0, 0))    #writes the score in the top left corner
         screen.blit(text, (50, 50))
-        text = pygame.font.Font.render(font, f"number entities = " + str(nbmonster), True, (0, 0, 0))   #writes the number of entities at the middle top of the screen
-        screen.blit(text, (550, 50))
+        #text = pygame.font.Font.render(font, f"number entities = " + str(nbmonster), True, (0, 0, 0))   #writes the number of entities at the middle top of the screen
+        #screen.blit(text, (550, 50))
 
-        redHeart = pygame.image.load("coeurPlein.png")
+        redHeart = pygame.image.load("images/coeurPlein.png")
         redHeart = pygame.transform.scale(redHeart, (30, 30))
-        blackHeart = pygame.image.load("coeurVide.png")
+        blackHeart = pygame.image.load("images/coeurVide.png")
         blackHeart = pygame.transform.scale(blackHeart, (30, 30))
 
         for i in range(self.player.playerMaxHealth//10 +1):      #divide the number of hearts of the player by 10 to display them as lines of ten hearts
